@@ -11,6 +11,7 @@ Install-Script -Name yadm
 ```
 
 ## A very quick tour
+
 ```ps1
 # Initialize a new repository
 yadm init
@@ -22,8 +23,6 @@ yadm clone <url>
 yadm add <important file>
 yadm commit
 ```
-If you enjoy using PSYadm, consider adding a star to the repository on GitHub. 
-The star count helps others discover PSYadm.
 
 ## Finished
 
@@ -35,19 +34,21 @@ yadm clone <url> [-f]      - Clone an existing repository
 yadm list [-a]             - List tracked files
 yadm bootstrap             - Execute $HOME/.config/yadm/bootstrap.ps1
 yadm enter [COMMAND]       - Run sub-shell with GIT variables set
+yadm encrypt               - Encrypt files
+yadm decrypt               - Decrypt files
 ```
+
+> `yadm encrypt` and `yadm decrypt` only support `gpg` now
 
 ## Todo
 
-the following command have not been finished, i will work hard on it
+the following command have not been finished
 
 ```ps1
-yadm init [-f]             - Initialize an empty repository
-  yadm alt                   - Create links for alternates
-  yadm encrypt               - Encrypt files
-  yadm decrypt [-l]          - Decrypt files
-  yadm perms                 - Fix perms for private files
-  yadm enter [COMMAND]       - Run sub-shell with GIT variables set
-  yadm git-crypt [OPTIONS]   - Run git-crypt commands for the yadm repo
-  yadm transcrypt [OPTIONS]  - Run transcrypt commands for the yadm repo
+yadm decrypt [-l]          - Decrypt files
+yadm alt                   - Create links for alternates
+yadm perms                 - Fix perms for private files
+yadm enter [COMMAND]       - Run sub-shell with GIT variables set
+yadm git-crypt [OPTIONS]   - Run git-crypt commands for the yadm repo
+yadm transcrypt [OPTIONS]  - Run transcrypt commands for the yadm repo
 ```

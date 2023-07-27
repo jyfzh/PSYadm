@@ -1,7 +1,7 @@
 
 <#PSScriptInfo
 
-.VERSION 1.1
+.VERSION 1.2
 
 .GUID efddd9c5-72e8-4eab-b5d7-abd9e968ca44
 
@@ -9,7 +9,7 @@
 
 .COMPANYNAME
 
-.COPYRIGHT (c) 2023 jyf
+.COPYRIGHT
 
 .TAGS
 
@@ -30,23 +30,25 @@
 
 .PRIVATEDATA
 
-#> 
-
-
+#>
 
 <# 
 
-.DESCRIPTION Yet Another Dotfiles Manager Write In Powershell
+.DESCRIPTION 
+ Yet Another Dotfiles Manager Write In Powershell 
 
 #> 
-
 Param()
+
 
 $gitDir = "$HOME/.local/share/yadm/repo.git"
 $workTree = "$HOME"
+$bootstrapFile = "$HOME/.config/yadm/bootstrap.ps1"
+$encryptFile = "$HOME/.config/yadm/encrypt"
+$archiveFile = "$HOME/.local/share/yadm/archive"
 
-# before exec command 
-if ($args.Count -eq 0) {
+function help
+{
     $help = "
 Usage: yadm <command> [options...]
 
@@ -64,59 +66,130 @@ Commands:
   yadm enter [COMMAND]       - Run sub-shell with GIT variables set
 
 Files:
-  $HOME/.config/yadm/bootstrap.ps1     - Script run via: yadm bootstrap
-  $HOME/.local/share/yadm/repo.git - yadm's Git repository "
-    Write-Host $help
-    exit
-}elseif ($args[0] -eq "bootstrap") {
-    if (Test-Path -Path "$HOME/.config/yadm/bootstrap.ps1"){
-        . $HOME/.config/yadm/bootstrap.ps1
-    }else{
-        Write-Host "ERROR: Cannot execute bootstrap"
-        Write-Host "$HOME/.config/yadm/bootstrap.ps1' is not an executable program."
+  $bootstrapFile  - Script run via: yadm bootstrap
+  $gitDir  - yadm's Git repository "
+  Write-Host $help
+}
+
+function bootstrap
+{
+    if (Test-Path -Path $bootstrapFile)
+    {
+        . $bootstrapFile
+    } else
+    {
+        Write-Error "ERROR: Cannot execute bootstrap"
+        Write-Error "$bootstrapFile is not an executable program."
     }
-    exit
-}elseif ($args[0] -eq "init") {
-    if ($args[$args.Count-1] -eq '-f'){
+}
+
+function init
+{
+    if ($args[$args.Count-1] -eq '-f')
+    {
         Remove-Item -Recurse -Force $gitDir
         $args = $args[0..($args.Count-2)]
-    }elseif (Test-Path -Path $gitDir -PathType Container) {
-        Write-Host "ERROR: Git repo already exists."
-        Write-Host "Use '-f' if you want to force it to be overwritten."
+    } elseif (Test-Path -Path $gitDir -PathType Container)
+    {
+        Write-Error "ERROR: Git repo already exists."
+        Write-Error "Use '-f' if you want to force it to be overwritten."
         exit
-    } 
+    }
     $command = "git --git-dir=$gitDir $args --bare"
-    iex $command
-}elseif ($args[0] -eq "clone") {
-    if ($args[$args.Count-1] -eq '-f'){
+    Invoke-Expression $command
+    git --git-dir=$gitDir --work-tree=$workTree config --local status.showUntrackedFiles no
+}
+
+function clone
+{
+    if ($args[$args.Count-1] -eq '-f')
+    {
         Remove-Item -Recurse -Force $gitDir
         $args = $args[0..($args.Count-2)]
-    }elseif (Test-Path -Path $gitDir -PathType Container) {
-        Write-Host "ERROR: Git repo already exists."
-        Write-Host "Use '-f' if you want to force it to be overwritten."
+    } elseif (Test-Path -Path $gitDir -PathType Container)
+    {
+        Write-Error "ERROR: Git repo already exists."
+        Write-Error "Use '-f' if you want to force it to be overwritten."
         exit
     }
     $command = "git $args $gitDir --bare"
-    iex $command
-}elseif ($args[0] -eq "list"){
-    if ($args[$args.Count-1] -eq '-a'){
-        $command = "git --git-dir=$gitDir ls-files"
-        iex $command
-    }else{
-        $command = "git --git-dir=$gitDir --work-tree=$workTree ls-files"
-        iex $command
-    }
-}else{
-    $command = "git --git-dir=$gitDir --work-tree=$workTree $args"
-    iex $command
-}
-
-
-# after exec command
-if ($args[0] -eq "init") {
-    git --git-dir=$gitDir --work-tree=$workTree config --local status.showUntrackedFiles no
-}elseif ($args[0] -eq "clone") {
+    Invoke-Expression $command
     git --git-dir=$gitDir --work-tree=$workTree reset --hard
     git --git-dir=$gitDir --work-tree=$workTree config --local status.showUntrackedFiles no
 }
 
+function list
+{
+    if ($args[$args.Count-1] -eq '-a')
+    {
+        $command = "git --git-dir=$gitDir ls-files"
+        Invoke-Expression $command
+    } else
+    {
+        $command = "git --git-dir=$gitDir --work-tree=$workTree ls-files"
+        Invoke-Expression $command
+    }
+}
+
+function encrypt
+{
+    $tempfile = New-TemporaryFile
+    tar -cvzf $tempfile -T $encryptFile -C $HOME
+    gpg -c --output $archiveFile $tempfile
+}
+
+function decrypt
+{
+    $tempfile = New-TemporaryFile
+    gpg -o $tempfile -d $archiveFile
+    tar -xvzf $tempfile -C $HOME
+}
+
+
+function default
+{
+    $command = "git --git-dir=$gitDir --work-tree=$workTree $args"
+    Invoke-Expression $command
+}
+
+if ($args.Count -eq 0)
+{
+    help
+} else
+{
+    switch ($args[0])
+    {
+        "help"
+        {
+            help
+        }
+        "bootstrap"
+        {
+            bootstrap
+        }
+        "init"
+        {
+            init
+        }
+        "clone"
+        {
+            clone
+        }
+        "list"
+        {
+            list
+        }
+        "encrypt"
+        {
+            encrypt
+        }
+        "decrypt"
+        {
+            decrypt
+        }
+        default
+        {
+            default
+        }
+    }
+}

@@ -1,7 +1,7 @@
 
 <#PSScriptInfo
 
-.VERSION 1.2
+.VERSION 1.3
 
 .GUID efddd9c5-72e8-4eab-b5d7-abd9e968ca44
 
@@ -13,7 +13,7 @@
 
 .TAGS
 
-.LICENSEURI https://github.com/jyf-111/PSYadm/blob/main/LICENSE
+.LICENSEURI https://github.com/jyfzh/PSYadm/blob/main/LICENSE
 
 .PROJECTURI
 
@@ -40,7 +40,7 @@
 #> 
 Param()
 
-
+$GlobalArgs = $args
 $gitDir = "$HOME/.local/share/yadm/repo.git"
 $workTree = "$HOME"
 $bootstrapFile = "$HOME/.config/yadm/bootstrap.ps1"
@@ -63,7 +63,6 @@ Commands:
   yadm clone <url> [-f]      - Clone an existing repository
   yadm list [-a]             - List tracked files
   yadm bootstrap             - Execute $HOME/.config/yadm/bootstrap.ps1
-  yadm enter [COMMAND]       - Run sub-shell with GIT variables set
 
 Files:
   $bootstrapFile  - Script run via: yadm bootstrap
@@ -85,34 +84,34 @@ function bootstrap
 
 function init
 {
-    if ($args[$args.Count-1] -eq '-f')
+    if ($GlobalArgs[$args.Count-1] -eq '-f')
     {
         Remove-Item -Recurse -Force $gitDir
-        $args = $args[0..($args.Count-2)]
+        $GlobalArgs = $args[0..($args.Count-2)]
     } elseif (Test-Path -Path $gitDir -PathType Container)
     {
         Write-Error "ERROR: Git repo already exists."
         Write-Error "Use '-f' if you want to force it to be overwritten."
         exit
     }
-    $command = "git --git-dir=$gitDir $args --bare"
+    $command = "git --git-dir=$gitDir $GlobalArgs --bare"
     Invoke-Expression $command
     git --git-dir=$gitDir --work-tree=$workTree config --local status.showUntrackedFiles no
 }
 
 function clone
 {
-    if ($args[$args.Count-1] -eq '-f')
+    if ($GlobalArgs[$args.Count-1] -eq '-f')
     {
         Remove-Item -Recurse -Force $gitDir
-        $args = $args[0..($args.Count-2)]
+        $GlobalArgs = $args[0..($args.Count-2)]
     } elseif (Test-Path -Path $gitDir -PathType Container)
     {
         Write-Error "ERROR: Git repo already exists."
         Write-Error "Use '-f' if you want to force it to be overwritten."
         exit
     }
-    $command = "git $args $gitDir --bare"
+    $command = "git $GlobalArgs $gitDir --bare"
     Invoke-Expression $command
     git --git-dir=$gitDir --work-tree=$workTree reset --hard
     git --git-dir=$gitDir --work-tree=$workTree config --local status.showUntrackedFiles no
@@ -120,7 +119,7 @@ function clone
 
 function list
 {
-    if ($args[$args.Count-1] -eq '-a')
+    if ($GlobalArgs[$args.Count-1] -eq '-a')
     {
         $command = "git --git-dir=$gitDir ls-files"
         Invoke-Expression $command
@@ -148,16 +147,16 @@ function decrypt
 
 function default
 {
-    $command = "git --git-dir=$gitDir --work-tree=$workTree $args"
+    $command = "git --git-dir=$gitDir --work-tree=$workTree $GlobalArgs"
     Invoke-Expression $command
 }
 
-if ($args.Count -eq 0)
+if ($GlobalArgs.Count -eq 0)
 {
     help
 } else
 {
-    switch ($args[0])
+    switch ($GlobalArgs[0])
     {
         "help"
         {
